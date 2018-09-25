@@ -240,31 +240,11 @@ int ProximitySensor::readEvents(sensors_event_t* data, int count)
                 }
             }
         } else if (type == EV_SYN) {
-            switch ( event->code ){
-                case SYN_TIME_SEC:
-                    {
-                        mUseAbsTimeStamp = true;
-                        report_time = event->value*1000000000LL;
-                    }
-                break;
-                case SYN_TIME_NSEC:
-                    {
-                        mUseAbsTimeStamp = true;
-                        mPendingEvent.timestamp = report_time+event->value;
-                    }
-                break;
-                case SYN_REPORT:
-                    {
-                        if (mEnabled && mUseAbsTimeStamp) {
-                            *data++ = mPendingEvent;
-                            numEventReceived++;
-                            count--;
-                            mUseAbsTimeStamp = false;
-                        } else {
-                            ALOGE_IF(!mUseAbsTimeStamp, "ProximitySensor: timestamp not received");
-                        }
-                    }
-                break;
+            mPendingEvent.timestamp = timevalToNano(event->time);
+            if (mEnabled) {
+                *data++ = mPendingEvent;
+                count--;
+                numEventReceived++;
             }
         } else {
             ALOGE("ProximitySensor: unknown event (type=%d, code=%d)",

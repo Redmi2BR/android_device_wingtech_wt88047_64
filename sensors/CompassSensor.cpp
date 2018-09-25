@@ -58,7 +58,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 CompassSensor::CompassSensor(struct SensorContext *context)
 	: SensorBase(NULL, NULL, context),
 	  mEnabled(0),
-	  mInputReader(6),
+	  mInputReader(4),
 	  mHasPendingEvent(false),
 	  mEnabledTime(0),
 	  res(CONVERT_MAG)
@@ -189,18 +189,9 @@ again:
 				mPendingEvent.magnetic.z = value * res;
 			}
 		} else if (type == EV_SYN) {
-			if (event->code ==  SYN_TIME_SEC) {
-				mUseAbsTimeStamp = true;
-				report_time = event->value*1000000000LL;
-			} else if (event->code ==  SYN_TIME_NSEC) {
-				mUseAbsTimeStamp = true;
-				mPendingEvent.timestamp = report_time+event->value;
-			} else if (event->code == SYN_REPORT) {
-				if (!mUseAbsTimeStamp) {
-					ALOGW("CompassSensor: timestamp not received");
-					mPendingEvent.timestamp = timevalToNano(event->time);
-				}
-				if (mEnabled) {
+			mPendingEvent.timestamp = timevalToNano(event->time);
+			if (mEnabled) {
+				if (mPendingEvent.timestamp >= mEnabledTime) {
 					raw = mPendingEvent;
 					if (algo != NULL) {
 						if (algo->methods->convert(&raw, &result, NULL)) {
